@@ -178,3 +178,24 @@ export async function run<T, R>(
     await fs.unlink(cwd);
   }
 }
+
+// Test if moduleAlreadyInManifest warning is displayed
+export const warningChecker = async (warningFragments, expected, args, flags, config, reporter, lockfile): Promise<void> => {
+  const add = new Add(args, flags, config, reporter, lockfile);
+  await add.init();
+
+  const output = reporter.getBuffer();
+  const warnings = output.filter(entry => entry.type === 'warning');
+
+  warningFragments.forEach((fragment) => {
+    expect(
+      warnings.some(warning => {
+        return warning.data.toString().toLowerCase().indexOf(fragment) > -1;
+      }),
+    ).toEqual(expected);
+  });
+};
+
+export const moduleAlreadyInManifestChecker = warningChecker.bind([
+  'is already in', 'Please remove existing entry first before adding it to'
+]);

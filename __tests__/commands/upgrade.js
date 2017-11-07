@@ -410,3 +410,14 @@ test.concurrent('latest flag does not downgrade from a beta', (): Promise<void> 
     await expectInstalledDependency(config, 'react-refetch', '^1.0.3-0', '1.0.3-0');
   });
 });
+
+test.concurrent('Does not display moduleAlreadyInManifest warning when upgrading a devDependency', (): Promise<void> => {
+  return buildRun(
+    reporters.BufferReporter,
+    fixturesLoc,
+    moduleAlreadyInManifestCheck.bind(null, false),
+    ['is-online'],
+    {},
+    'add-already-added-dev-dependency',
+  );
+});
