@@ -1,7 +1,7 @@
 /* @flow */
 
 import {ConsoleReporter} from '../../src/reporters/index.js';
-import {explodeLockfile, run as buildRun} from './_helpers.js';
+import {explodeLockfile, run as buildRun, moduleAlreadyInManifestChecker} from './_helpers.js';
 import {run as upgrade} from '../../src/cli/commands/upgrade.js';
 import * as fs from '../../src/util/fs.js';
 import * as reporters from '../../src/reporters/index.js';
@@ -411,11 +411,17 @@ test.concurrent('latest flag does not downgrade from a beta', (): Promise<void> 
   });
 });
 
-test.concurrent('Does not display moduleAlreadyInManifest warning when upgrading a devDependency', (): Promise<void> => {
+test.concurrent('Does not display moduleAlreadyInManifest warnings during upgrade', (): Promise<void> => {
   return buildRun(
     reporters.BufferReporter,
     fixturesLoc,
-    moduleAlreadyInManifestCheck.bind(null, false),
+    async (args, flags, config, reporter): Promise<void> => {
+      await config.init({commandName: 'upgrade'});
+      expect(config.commandName).toEqual('upgrade');
+      await upgrade(config, reporter, flags, args);
+
+      moduleAlreadyInManifestChecker({reporter, expectWarnings: false});
+    },
     ['is-online'],
     {},
     'add-already-added-dev-dependency',

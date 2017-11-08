@@ -9,6 +9,7 @@ import {
   run as buildRun,
   runInstall,
   makeConfigFromDirectory,
+  moduleAlreadyInManifestChecker,
 } from './_helpers.js';
 import {Add, run as add} from '../../src/cli/commands/add.js';
 import * as constants from '../../src/constants.js';
@@ -147,38 +148,17 @@ test.concurrent('install with --optional flag', (): Promise<void> => {
   });
 });
 
-// Test if moduleAlreadyInManifest warning is displayed
-const moduleAlreadyInManifestChecker = ({expectWarnings}: {expectWarnings: boolean}) => async (
-  args,
-  flags,
-  config,
-  reporter,
-  lockfile,
-): Promise<void> => {
-  const add = new Add(args, flags, config, reporter, lockfile);
-  await add.init();
-
-  const output = reporter.getBuffer();
-  const warnings = output.filter(entry => entry.type === 'warning');
-
-  expect(
-    warnings.some(warning => {
-      return warning.data.toString().toLowerCase().indexOf('is already in') > -1;
-    }),
-  ).toEqual(expected);
-
-  expect(
-    warnings.some(warning => {
-      return warning.data.toString().toLowerCase().indexOf('please remove existing entry first before adding') > -1;
-    }),
-  ).toEqual(expected);
-};
-
 test.concurrent('warns when adding a devDependency as dependency', (): Promise<void> => {
   return buildRun(
     reporters.BufferReporter,
     fixturesLoc,
-    moduleAlreadyInManifestChecker({expectWarnings: true}),
+    async (args, flags, config, reporter): Promise<void> => {
+      await config.init({commandName: 'add'});
+      expect(config.commandName).toEqual('add');
+      await add(config, reporter, flags, args);
+
+      moduleAlreadyInManifestChecker({reporter, expectWarnings: true});
+    },
     ['is-online'],
     {},
     'add-already-added-dev-dependency',
@@ -189,7 +169,13 @@ test.concurrent("doesn't warn when adding a devDependency as devDependency", ():
   return buildRun(
     reporters.BufferReporter,
     fixturesLoc,
-    moduleAlreadyInManifestChecker({expectWarnings: false}),
+    async (args, flags, config, reporter): Promise<void> => {
+      await config.init({commandName: 'add'});
+      expect(config.commandName).toEqual('add');
+      await add(config, reporter, flags, args);
+
+      moduleAlreadyInManifestChecker({reporter, expectWarnings: false});
+    },
     ['is-online'],
     {dev: true},
     'add-already-added-dev-dependency',
@@ -200,7 +186,13 @@ test.concurrent('warns when adding a dependency as devDependency', (): Promise<v
   return buildRun(
     reporters.BufferReporter,
     fixturesLoc,
-    moduleAlreadyInManifestChecker({expectWarnings: true}),
+    async (args, flags, config, reporter): Promise<void> => {
+      await config.init({commandName: 'add'});
+      expect(config.commandName).toEqual('add');
+      await add(config, reporter, flags, args);
+
+      moduleAlreadyInManifestChecker({reporter, expectWarnings: true});
+    },
     ['is-online'],
     {dev: true},
     'add-already-added-dependency',
@@ -211,7 +203,13 @@ test.concurrent("doesn't warn when adding a dependency as dependency", (): Promi
   return buildRun(
     reporters.BufferReporter,
     fixturesLoc,
-    moduleAlreadyInManifestChecker({expectWarnings: false}),
+    async (args, flags, config, reporter): Promise<void> => {
+      await config.init({commandName: 'add'});
+      expect(config.commandName).toEqual('add');
+      await add(config, reporter, flags, args);
+
+      moduleAlreadyInManifestChecker({reporter, expectWarnings: false});
+    },
     ['is-online'],
     {},
     'add-already-added-dependency',
